@@ -7,7 +7,7 @@
 LibreLock is a self-hosted modern password manager, built out of distrust in third-party password managers.
 
 ## Features
-- **Store passwords and notes**: Save your credentials and sensitive information securely.
+- **Store passwords and notes**: Save your credentials, credit card information, and other sensitive data securely.
 - **Client-side encryption**: All vault data is encrypted on the client before sending to the server - server never sees vault items or master passwords. Vault is encrypted with a single Account Encryption Key (AEK) that is wrapped by the master key, allowing for secure and efficient encryption.
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
 - **Categorization**: Organize your vault items into custom categories for easy management.
