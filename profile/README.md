@@ -4,7 +4,7 @@
 </div>
 
 
-LibreLock is an open-source self-hosted modern password manager, built out of distrust in third-party password managers.
+LibreLock is a self-hosted modern password manager, built out of distrust in third-party password managers.
 
 ## Features
 - **Store password and notes**: Save your credentials and sensitive information securely.
