@@ -7,8 +7,9 @@
 LibreLock is a self-hosted modern password manager, built out of distrust in third-party password managers.
 
 ## Features
-- **Store password and notes**: Save your credentials and sensitive information securely.
-- **Client-side encryption**: All vault data is encrypted on the client before - server never sees vault items or master passwords. Vault is encrypted with a single Account Encryption Key (AEK) that is wrapped by the master key, allowing for secure and efficient encryption.
+- **Store passwords and notes**: Save your credentials and sensitive information securely.
+- **Client-side encryption**: All vault data is encrypted on the client before sending to the server - server never sees vault items or master passwords. Vault is encrypted with a single Account Encryption Key (AEK) that is wrapped by the master key, allowing for secure and efficient encryption.
+- **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
 - **Categorization**: Organize your vault items into custom categories for easy management.
 - **Session management**: View and revoke active sessions across devices for enhanced security.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
@@ -40,9 +41,9 @@ LibreLock is a self-hosted modern password manager, built out of distrust in thi
 5. Open [localhost:1401](http://localhost:1401) to access LibreLock. Create a new account from the [register page](http://localhost:1401/register) and start managing your passwords securely!
 
 
-## Cryptographic Architecture
+## Cryptography Overview
 
-Librelock uses client-side encryption with key wrapping. The server never sees plaintext vault data or the master password.
+Librelock uses client-side encryption with key wrapping. The server never sees plaintext vault data or the master password - all vault data is encrypted with AEK before being sent to the server.
 
 ### Key Hierarchy
 
@@ -68,7 +69,7 @@ MasterKey (256-bit, never leaves client)
 |-----|----------------|---------|
 | `MasterPassword` | User's head | Input to KDF |
 | `MasterKey` | Client RAM only | KDF output, never stored or sent |
-| `auth_credential` | Sent to server once (login/register) | Authentication only — bcrypt hash stored |
+| `auth_credential` | Sent to server once (login/register) | Authentication only, bcrypt hash stored |
 | `WrappingKey` | Client RAM only | Derived from MasterKey, wraps AEK |
 | `AEK` (Account Encryption Key) | Client RAM; encrypted form in DB | Single key that encrypts all vault items |
 | `protected_key` | Server DB | AES-GCM ciphertext of AEK under WrappingKey |
@@ -84,7 +85,7 @@ The AEK is generated once at registration and never changes. Only its encrypted 
 2. Client derives `auth_credential = HKDF(MasterKey, "auth")`
 3. Client derives `WrappingKey = HKDF(MasterKey, "wrap")`
 4. Client generates a random 256-bit `AEK`
-5. Client encrypts: `protected_key = AES-256-GCM(AEK, WrappingKey)` — IV prepended to ciphertext
+5. Client encrypts: `protected_key = AES-256-GCM(AEK, WrappingKey)` - IV prepended to ciphertext
 6. Client sends to server: `username`, `auth_credential`, `protected_key`, KDF params
 7. Server stores `bcrypt(auth_credential)`, `protected_key`, KDF params
 
@@ -97,15 +98,9 @@ The AEK is generated once at registration and never changes. Only its encrypted 
 5. Client decrypts: `AEK = AES-256-GCM-Decrypt(protected_key, WrappingKey)`
 6. Client uses AEK to decrypt vault items
 
+### Changing Master Password
 
-## Vault Items
-
-All vault data is encrypted with AEK before being sent to the server.
-Server stores and returns `encrypted_blob` and `iv` without inspecting them.
-
-## Changing Master Password
-
-Because vault items are encrypted with AEK (not directly with MasterKey), changing the master password only requires re-wrapping the AEK - vault items are untouched.
+Because vault items are encrypted with AEK (not directly with MasterKey), changing the master password only requires re-wrapping the AEK - vault items remain untouched.
 
 1. Client derives old `MasterKey` and verifies with `current_auth_credential`
 2. Client derives new `MasterKey` from new master password + new KDF params
@@ -115,7 +110,3 @@ Because vault items are encrypted with AEK (not directly with MasterKey), changi
 6. Client sends new credentials and protected key to server, vault items remain encrypted under the same AEK
 
 Server atomically updates `auth_hash`, KDF params, and `protected_key`, then invalidates all other active sessions.
-
-
-## API Reference
-See [librelock-api](https://github.com/librelock/librelock-api) for detailed API documentation.
