@@ -16,29 +16,45 @@ LibreLock is a self-hosted modern password manager, built out of distrust in thi
 
 
 ## Get Started
-1. Clone frontend and backend repositories:
-    ```bash
-    git clone https://github.com/librelock/librelock-web.git
-    git clone https://github.com/librelock/librelock-server.git
-    ```
-2. Setup MySQL database:
-    ```bash
-    cd librelock-server
-    docker run -d -p 3306:3306 --name librelock-db -e MYSQL_ROOT_PASSWORD=YOUR_PASSWORD mysql:latest
-    ```
-3. Build and run the backend:
-    ```bash
-    cd librelock-server
-    docker build -t librelock-server .
-    docker run -d -p 8000:8000 --name librelock-server librelock-server
-    ```
-4. Build and run the frontend:
-    ```bash
-    cd librelock-web
-    docker build -t librelock-web .
-    docker run -d -p 1401:1401 --name librelock-web librelock-web
-    ```
-5. Open [localhost:1401](http://localhost:1401) to access LibreLock. Create a new account from the [register page](http://localhost:1401/register) and start managing your passwords securely!
+
+Docker Compose is the recommended way to run LibreLock locally. The backend API and frontend web app are in separate repositories, but both use Docker Compose for easy setup.
+
+
+### Backend (Laravel + MySQL)
+
+```bash
+git clone https://github.com/librelock/librelock-api.git
+cd librelock-api
+cp .env.example .env
+```
+
+Generate the two required secrets and add them to `.env`:
+
+```bash
+# APP_KEY
+docker run --rm php:8.4-cli-alpine php -r "echo 'base64:' . base64_encode(random_bytes(32));"
+
+# JWT_SECRET
+docker run --rm php:8.4-cli-alpine php -r "echo base64_encode(random_bytes(32));"
+```
+
+Then start the API and MySQL:
+
+```bash
+docker compose up -d
+```
+
+The API is now running at [localhost:8000](http://localhost:8000). MySQL data persists in a Docker volume across restarts.
+
+### Frontend (Vue)
+
+```bash
+git clone https://github.com/librelock/librelock-web.git
+cd librelock-web
+docker compose up -d
+```
+
+Open [localhost:1401](http://localhost:1401). Create an account and start managing your secrets.
 
 
 ## Cryptography Overview
