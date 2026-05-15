@@ -3,14 +3,13 @@
   <h1 align="center">LibreLock</h1>
 </div>
 
-
-LibreLock is a secure, modern, self-hosted password manager, built out of distrust in third-party password managers. Manage your passwords, credit cards, and notes securely all in one place.
+LibreLock is a secure, modern, self-hosted password manager. Manage your passwords, credit cards, and notes securely all in one place.
 
 ## Features
-- **Secure vault**: Store your credentials, credit card details, and notes. Each entry supports optional color coding and categorization for easier organization.
+- **Secure vault**: Store your credentials, credit card details, and notes.
 - **Client-side encryption**: All vault data is encrypted in the browser using AES-256-GCM before being sent to the server. Server stores only encrypted blobs and password hashes, non of which it can read. For more, see Cryptography Overview bellow.
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
-- **Categorization**: Organize your vault items into custom categories for easy management.
+- **Categorization**: Organize your vault items into categories or assign them colors for easy identification.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 - **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
