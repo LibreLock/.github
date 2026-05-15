@@ -4,21 +4,23 @@
 </div>
 
 
-LibreLock is a self-hosted modern password manager, built out of distrust in third-party password managers.
+LibreLock is a secure, modern, self-hosted password manager, built out of distrust in third-party password managers. Manage your passwords, credit cards, and notes securely all in one place.
 
 ## Features
-- **Store passwords and notes**: Save your credentials, credit card information, and other sensitive data securely.
-- **Client-side encryption**: All vault data is encrypted on the client before sending to the server - server never sees vault items or master passwords. Vault is encrypted with a single Account Encryption Key (AEK) that is wrapped by the master key, allowing for secure and efficient encryption.
+- **Secure vault**: Store your credentials, credit card details, and notes. Each entry supports optional color coding and categorization for easier organization.
+- **Client-side encryption**: All vault data is encrypted in the browser using AES-256-GCM before being sent to the server. Server stores only encrypted blobs and password hashes, non of which it can read. For more, see Cryptography Overview bellow.
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
 - **Categorization**: Organize your vault items into custom categories for easy management.
-- **Session management**: View and revoke active sessions across devices for enhanced security.
+- **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
+- **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
 
 
 ## Get Started
 
-Docker Compose is the recommended way to run LibreLock locally. The backend API and frontend web app are in separate repositories, but both use Docker Compose for easy setup.
-
+The recommended way to run LibreLock is with Docker Compose. The backend API and frontend web app are in separate repositories, but both use Docker Compose for easy setup.
+<br>
+If you prefer to run without Docker, follow the `README.md` files in both repositories for backend and frontend setup instructions.
 
 ### Backend (Laravel + MySQL)
 
