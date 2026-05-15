@@ -33,8 +33,12 @@ If you prefer to run without Docker, follow instructions in `README.md` files fo
     ```
 2. Run the setup script to generate `APP_KEY`:
     ```bash
+    # Linux/macOS
     chmod +x setup.sh
     ./setup.sh
+
+    # Windows (PowerShell)
+    .\setup.ps1
     ```
 3. Start the application:
     ```bash
