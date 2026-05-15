@@ -26,21 +26,6 @@ Docker Compose is the recommended way to run LibreLock locally. The backend API 
 git clone https://github.com/librelock/librelock-api.git
 cd librelock-api
 cp .env.example .env
-```
-
-Generate the two required secrets and add them to `.env`:
-
-```bash
-# APP_KEY
-docker run --rm php:8.4-cli-alpine php -r "echo 'base64:' . base64_encode(random_bytes(32));"
-
-# JWT_SECRET
-docker run --rm php:8.4-cli-alpine php -r "echo base64_encode(random_bytes(32));"
-```
-
-Then start the API and MySQL:
-
-```bash
 docker compose up -d
 ```
 
@@ -69,7 +54,7 @@ MasterPassword
      ▼ Argon2id (kdf_salt, kdf_iter, kdf_memory, kdf_parallelism)
      │
 MasterKey (256-bit, never leaves client)
-     ├─── HKDF("auth")  ──► auth_credential  ──► server stores bcrypt(auth_credential)
+     ├─── HKDF("auth")  ──► auth_credential  ──► server stores Argon2id(auth_credential)
      └─── HKDF("wrap")  ──► WrappingKey
                                  │
                                  ▼ AES-256-GCM encrypt
