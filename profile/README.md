@@ -17,9 +17,9 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 
 ## Get Started
 
-The recommended way to run LibreLock is with Docker Compose. The backend API and frontend web app are in separate repositories, but both use Docker Compose for easy setup.
+The recommended way to run LibreLock is with Docker Compose. The backend API and frontend web app are in separate repositories, both use Docker Compose for easy setup.
 <br>
-If you prefer to run without Docker, follow the `README.md` files in both repositories for backend and frontend setup instructions.
+If you prefer to run without Docker, follow instructions in `README.md` files found in both backend and frontend repositories.
 
 ### Backend
 1. Clone the repository and navigate into it:
