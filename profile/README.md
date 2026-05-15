@@ -22,18 +22,29 @@ The recommended way to run LibreLock is with Docker Compose. The backend API and
 <br>
 If you prefer to run without Docker, follow the `README.md` files in both repositories for backend and frontend setup instructions.
 
-### Backend (Laravel + MySQL)
-
-```bash
-git clone https://github.com/librelock/librelock-api.git
-cd librelock-api
-cp .env.example .env
-docker compose up -d
-```
+### Backend
+1. Clone the repository and navigate into it:
+    ```bash
+    git clone https://github.com/librelock/librelock-api.git
+    cd librelock-api
+    ```
+1. Copy `.env.example` to `.env` and update database credentials if needed.
+    ```bash
+    cp .env.example .env
+    ```
+2. Run the setup script to generate `APP_KEY`:
+    ```bash
+    chmod +x setup.sh
+    ./setup.sh
+    ```
+3. Start the application:
+    ```bash
+    docker compose up -d --build
+    ```
 
 The API is now running at [localhost:8000](http://localhost:8000). MySQL data persists in a Docker volume across restarts.
 
-### Frontend (Vue)
+### Frontend
 
 ```bash
 git clone https://github.com/librelock/librelock-web.git
