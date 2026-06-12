@@ -3,7 +3,7 @@
   <h1 align="center">LibreLock</h1>
 </div>
 
-LibreLock is a secure, modern, self-hosted password manager. Manage your passwords, credit cards, and notes securely all in one place.
+LibreLock is a secure, modern, self-hosted password manager. Manage your passwords, credit cards, and notes securely all in one place. Built for individuals and teams who value privacy and control over their data.
 
 ## Features
 - **Secure vault**: Store your credentials, credit card details, and notes.
@@ -12,73 +12,40 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 - **Categorization**: Organize your vault items into categories or assign them colors for easy identification.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 - **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
+- **Responsive design**: the UI adapts to different screen sizes, from mobile to desktop.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
 
 
 ## Get Started
 
-The recommended way to run LibreLock is with Docker Compose. The backend API and frontend web app are in separate repositories, both use Docker Compose for easy setup.
-<br>
-If you prefer to run without Docker, follow instructions in `README.md` files found in both backend and frontend repositories.
-
-### Backend
-1. Clone the repository and navigate into it:
-    ```bash
-    git clone https://github.com/librelock/librelock-api.git
-    cd librelock-api
-    ```
-1. Copy `.env.example` to `.env` and update database credentials if needed.
-    ```bash
-    cp .env.example .env
-    ```
-2. Run the setup script to generate `APP_KEY`:
-    ```bash
-    # Linux/macOS
-    chmod +x setup.sh
-    ./setup.sh
-
-    # Windows (PowerShell)
-    .\setup.ps1
-    ```
-3. Start the application:
-    ```bash
-    docker compose up -d --build
-    ```
-
-The API is now running at [localhost:8000](http://localhost:8000). MySQL data persists in a Docker volume across restarts.
-
-### Frontend
+The recommended way to run LibreLock is with Docker Compose. Clone [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web), then run the provided script from this repo to build and start both with one command:
 
 ```bash
+git clone https://github.com/librelock/librelock-server.git
 git clone https://github.com/librelock/librelock-web.git
-cd librelock-web
-docker compose up -d
+
+# Linux/macOS
+chmod +x ./run.sh
+./run.sh
+
+# Windows (PowerShell)
+./run.ps1
 ```
 
-Open [localhost:1401](http://localhost:1401). Create an account and start managing your secrets.
+This copies `.env.example` to `.env` for the backend if missing, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). To stop everything, run `./run.sh down` (or `./run.ps1 down`).
 
+To run the backend or frontend individually, or without Docker, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
+
+## Tech Stack
+- **Backend**: REST API built with [Go](https://go.dev/) and [Gin](https://gin-gonic.com/), backed by [PostgreSQL](https://www.postgresql.org/)
+- **Frontend**: Single-page application web application built with [Vue](https://vuejs.org/) and [Vite](https://vitejs.dev/).
 
 ## Cryptography Overview
-
 Librelock uses client-side encryption with key wrapping. The server never sees plaintext vault data or the master password - all vault data is encrypted with AEK before being sent to the server.
 
-### Key Hierarchy
+Users create an account with a username and a master password (at least 12 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
 
-```
-MasterPassword
-     │
-     ▼ Argon2id (kdf_salt, kdf_iter, kdf_memory, kdf_parallelism)
-     │
-MasterKey (256-bit, never leaves client)
-     ├─── HKDF("auth")  ──► auth_credential  ──► server stores Argon2id(auth_credential)
-     └─── HKDF("wrap")  ──► WrappingKey
-                                 │
-                                 ▼ AES-256-GCM encrypt
-                            AccountEncryptionKey (AEK)  ──► server stores as protected_key
-                                 │
-                                 ▼ AES-256-GCM encrypt
-                            vault item ciphertexts  ──► server stores encrypted_blob + iv
-```
+A random 256-bit **vault key** (`AEK`) encrypts all vault items with AES-256-GCM. The vault key itself is encrypted ("wrapped") under the wrapping key using AES-256-GCM with a random 12-byte IV, producing the **protected key** - the only form of the vault key ever sent to or stored on the server.
 
 ### Key Roles
 
@@ -86,13 +53,12 @@ MasterKey (256-bit, never leaves client)
 |-----|----------------|---------|
 | `MasterPassword` | User's head | Input to KDF |
 | `MasterKey` | Client RAM only | KDF output, never stored or sent |
-| `auth_credential` | Sent to server once (login/register) | Authentication only, bcrypt hash stored |
+| `auth_credential` | Sent to server once (login/register) | Authentication only, Argon2id hash stored |
 | `WrappingKey` | Client RAM only | Derived from MasterKey, wraps AEK |
-| `AEK` (Account Encryption Key) | Client RAM; encrypted form in DB | Single key that encrypts all vault items |
+| `AEK` (vault key) | Client RAM; encrypted form in DB | Single key that encrypts all vault items |
 | `protected_key` | Server DB | AES-GCM ciphertext of AEK under WrappingKey |
 
 The AEK is generated once at registration and never changes. Only its encrypted wrapper `protected_key` is updated when the master password changes.
-
 
 ## Authentication Flow
 
@@ -104,16 +70,18 @@ The AEK is generated once at registration and never changes. Only its encrypted 
 4. Client generates a random 256-bit `AEK`
 5. Client encrypts: `protected_key = AES-256-GCM(AEK, WrappingKey)` - IV prepended to ciphertext
 6. Client sends to server: `username`, `auth_credential`, `protected_key`, KDF params
-7. Server stores `bcrypt(auth_credential)`, `protected_key`, KDF params
+7. Server stores `argon2id(auth_credential)`, `protected_key`, KDF params
 
 ### Login
 
-1. Client fetches KDF params: `GET /api/auth/kdf?username=alice`
+1. Client fetches KDF params: `GET /auth/kdf?username=alice`
 2. Client derives `MasterKey`, then `auth_credential` and `WrappingKey`
 3. Client sends `auth_credential` to server
-4. Server returns user object including `protected_key`
+4. Server returns user object including `protected_key` (see Key Roles table above)
 5. Client decrypts: `AEK = AES-256-GCM-Decrypt(protected_key, WrappingKey)`
 6. Client uses AEK to decrypt vault items
+
+If the username does not exist, the server responds to step 1 with plausible, randomly generated KDF parameters instead of an error - this prevents an attacker from using `/auth/kdf` to enumerate registered usernames.
 
 ### Changing Master Password
 
@@ -127,3 +95,7 @@ Because vault items are encrypted with AEK (not directly with MasterKey), changi
 6. Client sends new credentials and protected key to server, vault items remain encrypted under the same AEK
 
 Server atomically updates `auth_hash`, KDF params, and `protected_key`, then invalidates all other active sessions.
+
+## Session Handling
+
+Once the vault is unlocked, the vault key is kept in memory as a non-extractable `CryptoKey` and mirrored to IndexedDB, so reloading the page restores the session without re-entering the master password. A `vault_unlocked` flag in `sessionStorage` gates access to that IndexedDB entry - since session storage is per-tab and cleared when a tab closes, a new tab cannot silently pull the key from IndexedDB without authenticating first.
