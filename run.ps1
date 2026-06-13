@@ -72,6 +72,8 @@ switch ($Action) {
         Write-Host "LibreLock is running:"
         Write-Host "    Web: http://localhost:1401"
         Write-Host "    API: http://localhost:8000"
+
+        Start-Process "http://localhost:1401"
     }
     "down" {
         Push-Location $WebDir

@@ -47,6 +47,12 @@ case "$ACTION" in
         echo "LibreLock is running:"
         echo "    Web: http://localhost:1401"
         echo "    API: http://localhost:8000"
+
+        if command -v xdg-open >/dev/null 2>&1; then
+            xdg-open "http://localhost:1401" >/dev/null 2>&1 &
+        elif command -v open >/dev/null 2>&1; then
+            open "http://localhost:1401" >/dev/null 2>&1 &
+        fi
         ;;
     down)
         (cd "$WEB_DIR" && docker compose down "$@")
