@@ -1,9 +1,13 @@
 <div align="center">
-  <img src="../images/logo.svg" alt="LibreLock logo" height="70" />
+  <img src="../content/logo.svg" alt="LibreLock logo" height="70" />
   <h1 align="center">LibreLock</h1>
 </div>
 
 LibreLock is a secure, modern, self-hosted password manager. Manage your passwords, credit cards, and notes securely all in one place. Built for individuals and teams who value privacy and control over their data.
+
+<div align="center">
+  <img src="../content/demo.gif" alt="LibreLock Demo" width="1000" />
+</div>
 
 ## Features
 - **Secure vault**: Store your credentials, credit card details, and notes.
