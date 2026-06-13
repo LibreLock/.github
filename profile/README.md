@@ -32,7 +32,9 @@ chmod +x ./run.sh
 ./run.ps1
 ```
 
-This copies `.env.example` to `.env` for the backend if missing, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). To stop everything, run `./run.sh down` (or `./run.ps1 down`).
+This copies `.env.example` to `.env` for the backend and generates a password for the Postgres DB. It then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000).
+
+To stop everything, run `./run.sh down` (or `./run.ps1 down`). To completely tear down the stack (including the Postgres data volume!) run `./run.sh down -v` (or `./run.ps1 down -v`).
 
 To run the backend or frontend individually, or without Docker, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
 
