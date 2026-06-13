@@ -22,17 +22,19 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 
 ## Get Started
 
-The recommended way to run LibreLock is with Docker Compose. Clone [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web), then run the provided script from this repo to build and start both with one command:
+The recommended way to run LibreLock is with Docker Compose. Clone [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web), then run the provided `run` script from this repo to build and start both with one command:
 
 ```bash
 git clone https://github.com/librelock/librelock-server.git
 git clone https://github.com/librelock/librelock-web.git
 
 # Linux/macOS
+# Get the script from https://github.com/LibreLock/.github/blob/main/run.sh
 chmod +x ./run.sh
 ./run.sh
 
 # Windows (PowerShell)
+# Get the script from https://github.com/LibreLock/.github/blob/main/run.ps1
 ./run.ps1
 ```
 
