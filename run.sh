@@ -5,14 +5,20 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVER_DIR="$SCRIPT_DIR/../librelock-server"
-WEB_DIR="$SCRIPT_DIR/../librelock-web"
 ACTION="${1:-up}"
 shift || true
 
+if [ -f "$SCRIPT_DIR/librelock-server/docker-compose.yml" ]; then
+    BASE_DIR="$SCRIPT_DIR"
+else
+    BASE_DIR="$SCRIPT_DIR/.."
+fi
+SERVER_DIR="$BASE_DIR/librelock-server"
+WEB_DIR="$BASE_DIR/librelock-web"
+
 for dir in "$SERVER_DIR" "$WEB_DIR"; do
     if [ ! -f "$dir/docker-compose.yml" ]; then
-        echo "Error: $dir/docker-compose.yml not found. Expected librelock-server and librelock-web as sibling directories of librelock-readme." >&2
+        echo "Error: $dir/docker-compose.yml not found. Expected librelock-server and librelock-web as siblings of librelock-readme, or alongside run.sh." >&2
         exit 1
     fi
 done

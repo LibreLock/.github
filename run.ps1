@@ -12,12 +12,18 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$ServerDir = Join-Path $ScriptDir "..\librelock-server"
-$WebDir = Join-Path $ScriptDir "..\librelock-web"
+
+if (Test-Path (Join-Path $ScriptDir "librelock-server\docker-compose.yml")) {
+    $BaseDir = $ScriptDir
+} else {
+    $BaseDir = Join-Path $ScriptDir ".."
+}
+$ServerDir = Join-Path $BaseDir "librelock-server"
+$WebDir = Join-Path $BaseDir "librelock-web"
 
 foreach ($dir in @($ServerDir, $WebDir)) {
     if (-not (Test-Path (Join-Path $dir "docker-compose.yml"))) {
-        Write-Error "Error: $dir\docker-compose.yml not found. Expected librelock-server and librelock-web as sibling directories of librelock-readme."
+        Write-Error "Error: $dir\docker-compose.yml not found. Expected librelock-server and librelock-web as siblings of librelock-readme, or alongside run.ps1."
         exit 1
     }
 }
