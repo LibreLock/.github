@@ -38,7 +38,7 @@ chmod +x ./run.sh
 ./run.ps1
 ```
 
-This copies `.env.example` to `.env` for the backend, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). The SQLite database lives in a Docker volume and persists across restarts.
+This copies `.env.example` to `.env` for the backend, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). The SQLite database lives in the `data/librelock.db` file inside `librelock-server` and persists across restarts.
 
 To stop everything, run `./run.sh down` (or `./run.ps1 down`). To completely tear down the stack (including the database volume!) run `./run.sh down -v` (or `./run.ps1 down -v`).
 
