@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Runs the full LibreLock stack (backend API + Postgres + frontend web) via Docker Compose
+# Runs the full LibreLock stack (backend API + frontend web) via Docker Compose
 # Usage: ./run.sh [up|down] [extra docker compose down args, eg. -v] (default: up)
 
 set -euo pipefail
@@ -26,11 +26,6 @@ done
 if [ ! -f "$SERVER_DIR/.env" ]; then
     echo "Creating $SERVER_DIR/.env from .env.example"
     cp "$SERVER_DIR/.env.example" "$SERVER_DIR/.env"
-
-    DB_PASSWORD="$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')"
-    sed -i.bak "s/^DB_PASSWORD=.*/DB_PASSWORD=$DB_PASSWORD/" "$SERVER_DIR/.env"
-    rm -f "$SERVER_DIR/.env.bak"
-    echo "Generated a random database password in $SERVER_DIR/.env"
 fi
 
 case "$ACTION" in
@@ -38,15 +33,20 @@ case "$ACTION" in
         (cd "$SERVER_DIR" && docker compose up -d --build)
         (cd "$WEB_DIR" && docker compose up -d --build)
 
-        DB_USER="$(grep -E '^DB_USER=' "$SERVER_DIR/.env" | cut -d= -f2-)" || true
-        DB_NAME="$(grep -E '^DB_NAME=' "$SERVER_DIR/.env" | cut -d= -f2-)" || true
         echo
-        echo "Testing database connection..."
-        if (cd "$SERVER_DIR" && docker compose exec -T db psql -U "${DB_USER:-librelock}" -d "${DB_NAME:-librelock}" -c "SELECT 1;" >/dev/null 2>&1); then
-            echo "Database connection OK"
+        echo "Testing API..."
+        API_OK=""
+        for _ in $(seq 1 10); do
+            if curl -fsS http://localhost:8000/ >/dev/null 2>&1; then
+                API_OK=1
+                break
+            fi
+            sleep 1
+        done
+        if [ -n "$API_OK" ]; then
+            echo "API OK"
         else
-            echo "Warning: could not connect to the database with DB_USER/DB_NAME from $SERVER_DIR/.env." >&2
-            echo "If you changed these after the first run, the Postgres data volume still has the old credentials - update .env to match or remove the volume to reinitialize." >&2
+            echo "Warning: API did not respond at http://localhost:8000 - check 'docker compose logs' in $SERVER_DIR." >&2
         fi
 
         echo
