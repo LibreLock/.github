@@ -46,6 +46,13 @@ To run without Docker (requires Go and Node.js), use `run-local.sh` / `run-local
 
 To run the backend or frontend individually, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
 
+## Documentation
+
+Guides live in [`docs/`](../docs/README.md):
+
+- [Organization Mode](../docs/organization.md) — teams, roles (admin/member), user management, and invite-only registration.
+- [Customization](../docs/customization.md) — white-label your instance with your own logo, company name, and support details.
+
 ## Tech Stack
 - **Backend**: REST API built with [Go](https://go.dev/) and [Gin](https://gin-gonic.com/). Uses [SQLite](https://sqlite.org/)
 - **Frontend**: Single-page application web application built with [Vue](https://vuejs.org/) and [Vite](https://vitejs.dev/).

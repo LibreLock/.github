@@ -54,7 +54,10 @@ Write-Host "Starting API..."
 $Server = Start-Process go -ArgumentList "run", "." -WorkingDirectory $ServerDir -NoNewWindow -PassThru
 
 Write-Host "Starting web..."
-$Web = Start-Process npm -ArgumentList "run", "dev" -WorkingDirectory $WebDir -NoNewWindow -PassThru
+Push-Location $WebDir
+npm run build
+$Web = Start-Process npm -ArgumentList "run", "preview", "--", "--port", "1401" -NoNewWindow -PassThru
+Pop-Location
 
 Write-Host ""
 Write-Host "LibreLock is running:"
