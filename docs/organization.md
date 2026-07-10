@@ -149,12 +149,12 @@ Registration accepts an optional `invite_token` field; it is required for non-fi
 ## Switching modes
 
 - **Personal → Organization**: in the app, **Settings → Account → Switch to organization**, confirm the warning.
-  The switching user becomes the owner, the organization-only tables (`organization`, `invite`, `audit_event`) are created, and the mode is persisted.
+  The switching user becomes the owner, the organization-only tables (`organization`, `invite`, `audit_event`, `org_vault_membership`, `org_category`, `org_vault`) are created, and the mode is persisted.
   No restart. Existing vault data is untouched.
 - **Organization → Personal**: **Organization → Management → Return to personal mode** (**owner only**).
-  This is **destructive**: it permanently deletes every account except the owner — cascade-deleting their vaults, categories, and sessions — then drops the organization tables (`organization`, `invite`, `audit_event`) and reverts the mode.
+  This is **destructive**: it permanently deletes every account except the owner — cascade-deleting their vaults, categories, and sessions — then drops the organization tables (`org_vault`, `org_category`, `org_vault_membership`, `audit_event`, `invite`, `organization`) and reverts the mode.
   The surviving owner is demoted to a plain personal user and stays logged in.
-  Guarded by password re-authentication plus a typed confirmation phrase (`delete <organization name>`).
+  Guarded by password re-authentication plus a typed confirmation phrase (`DELETE <organization name>`, case-sensitive).
   A full wipe is still possible by deleting `data/librelock.db`.
 
 Both switches happen live (the `RequireAdmin` guard and registration logic read the mode on every request), so the Organization area appears/disappears without a restart.

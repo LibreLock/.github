@@ -60,7 +60,7 @@ Guides live in [`docs/`](../docs/README.md):
 ## Cryptography Overview
 Librelock uses client-side encryption with key wrapping. The server never sees plaintext vault data or the master password - all vault data is encrypted with AEK before being sent to the server.
 
-Users create an account with a username and a master password (at least 12 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
+Users create an account with a username (up to 500 characters) and a master password (12 to 10000 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
 
 A random 256-bit **vault key** (`AEK`) encrypts all vault items with AES-256-GCM. The vault key itself is encrypted ("wrapped") under the wrapping key using AES-256-GCM with a random 12-byte IV, producing the **protected key** - the only form of the vault key ever sent to or stored on the server.
 
