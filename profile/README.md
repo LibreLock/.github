@@ -10,13 +10,13 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 </div>
 
 ## Features
-- **Secure vault**: Store your credentials, credit card details, and notes.
-- **Client-side encryption**: All vault data is encrypted in the browser using AES-256-GCM before being sent to the server. Server stores only encrypted blobs and password hashes, non of which it can read. For more, see Cryptography Overview bellow.
+- **Secure vault**: Securely store passwords, credit card details, and notes.
+- **Client-side encryption**: All vault data is encrypted in the browser using AES-256-GCM before being sent to the server. The server stores only encrypted blobs and password hashes, none of which it can read. For more, see the Cryptography Overview below.
+- **Personal and organization mode**: Use LibreLock as a personal password manager or create an organization with multiple users, roles, and invite-only registration.
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
-- **Categorization**: Organize your vault items into categories or assign them colors for easy identification.
+- **Categorization**: Organize your vault items into categories, assign them icons and colors for easy identification.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 - **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
-- **Responsive design**: the UI adapts to different screen sizes, from mobile to desktop.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
 
 
@@ -38,13 +38,22 @@ chmod +x ./run.sh
 ./run.ps1
 ```
 
-This copies `.env.example` to `.env` for the backend, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). The SQLite database lives in the `data/librelock.db` file inside `librelock-server` and persists across restarts.
+This copies `.env.example` to `.env`, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). LibreLock uses a single embedded SQLite database (no separate database server to run), which is kept in a named volume (`sqlite_data`), so it persists across restarts and rebuilds.
+
+A fresh instance always starts in **personal mode** - private, single-user vault, ready to use as-is. To run it as a team instance, sign in and switch to **organization mode** from Settings → Account → Switch to organization (no restart or config edit needed); the account you switch with becomes the owner. See [Organization Mode](../docs/organization.md) for details.
 
 To stop everything, run `./run.sh down` (or `./run.ps1 down`). To completely tear down the stack (including the database volume!) run `./run.sh down -v` (or `./run.ps1 down -v`).
 
 To run without Docker (requires Go and Node.js), use `run-local.sh` / `run-local.ps1` instead. This starts the API with `go run` and the web app with `npm run dev`, and stops both on Ctrl-C.
 
-To run the backend or frontend individually, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
+For details on running the backend or frontend individually, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
+
+## Documentation
+
+Guides live in [`docs/`](../docs/README.md):
+
+- [Organization Mode](../docs/organization.md) — teams, roles (admin/member), user management, and invite-only registration.
+- [Customization](../docs/customization.md) — white-label your instance with your own logo, company name, and support details.
 
 ## Tech Stack
 - **Backend**: REST API built with [Go](https://go.dev/) and [Gin](https://gin-gonic.com/). Uses [SQLite](https://sqlite.org/)
@@ -53,7 +62,7 @@ To run the backend or frontend individually, see the `README.md` in [librelock-s
 ## Cryptography Overview
 Librelock uses client-side encryption with key wrapping. The server never sees plaintext vault data or the master password - all vault data is encrypted with AEK before being sent to the server.
 
-Users create an account with a username and a master password (at least 12 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
+Users create an account with a username (up to 500 characters) and a master password (12 to 10000 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
 
 A random 256-bit **vault key** (`AEK`) encrypts all vault items with AES-256-GCM. The vault key itself is encrypted ("wrapped") under the wrapping key using AES-256-GCM with a random 12-byte IV, producing the **protected key** - the only form of the vault key ever sent to or stored on the server.
 

@@ -57,7 +57,7 @@ echo "Starting API..."
 SERVER_PID=$!
 
 echo "Starting web..."
-(cd "$WEB_DIR" && exec npm run dev) &
+(cd "$WEB_DIR" && npm run build && exec npm run preview -- --port 1401) &
 WEB_PID=$!
 
 echo
