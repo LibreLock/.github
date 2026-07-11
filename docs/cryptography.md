@@ -3,7 +3,7 @@
   <h1 align="center">Cryptography & Session Handling</h1>
 </div>
 
-How LibreLock protects your data: client-side encryption, key wrapping, the authentication flow, and how unlocked sessions are kept in the browser.
+How LibreLock protects your data: client-side encryption, key wrapping, the authentication flow, the organization shared vault, and how unlocked sessions are kept in the browser.
 
 ## Cryptography Overview
 
@@ -61,6 +61,46 @@ Because vault items are encrypted with AEK (not directly with MasterKey), changi
 6. Client sends new credentials and protected key to server, vault items remain encrypted under the same AEK
 
 Server atomically updates `auth_hash`, KDF params, and `protected_key`, then invalidates all other active sessions.
+
+## Organization Shared Vault
+
+Organization mode adds a shared vault that members can read and write in common. It keeps the same zero-knowledge guarantee — the server never sees the shared key or any private key — using the standard model of a per-user keypair plus one symmetric key enveloped to each member.
+
+### Per-user keypair
+
+Every account gets an RSA-OAEP keypair (3072-bit modulus, SHA-256), generated in the browser at registration:
+
+- The **public key** is uploaded and stored in plaintext on the server (`user.public_key`); it is not secret.
+- The **private key** is exported (PKCS8) and encrypted with AES-256-GCM under the same password-derived wrapping key that protects the vault key, then stored as `user.encrypted_private_key` (IV prepended). The server only ever holds the wrapped form.
+
+Accounts created before this feature are backfilled on their next login: while the wrapping key is available, the client generates a keypair and uploads it once (idempotent server-side, so a second attempt is a no-op).
+
+### The shared organization key
+
+Shared entries are all encrypted under a single random **organization key** (AES-256-GCM). This key is never stored on the server in any form the server can read. Instead, one copy per member is stored, each RSA-OAEP-enveloped to that member's public key in `org_vault_membership.wrapped_key`.
+
+- *Bootstrap.* The first admin/owner to enable sharing generates the organization key in the browser, envelopes it to their own public key, and self-grants (writes their own membership row). The key stays in memory for the session.
+- *Granting a member.* An admin who currently holds the organization key envelopes it to the target member's public key and posts the result as a new membership. This needs only the target's public key, never their password or private key, so an admin can grant (or re-grant, as recovery) access without the member present.
+- *Loading the key.* On login a member fetches their own enveloped copy (`GET /org/shared-key`) and decrypts it with their RSA private key to recover the organization key into memory.
+
+### Shared entries
+
+Shared entries live in a separate `org_vault` table with no owning-user column — they outlive whoever created them, and access is gated by membership rather than row ownership. Each row is an AES-256-GCM ciphertext (`encrypted_blob` + `iv`) under the organization key, exactly like personal entries but keyed on the shared key. Server-side, every shared-vault route requires an active membership; a request from a user without one is rejected with `403`.
+
+### Password changes and revocation
+
+- *Changing the master password* re-wraps the private key the same way it re-wraps the vault key: the client decrypts the private key with the old wrapping key and re-encrypts it under the new one. The public key and all memberships stay valid — the organization key is never re-enveloped, because it is bound to public keys, which do not change.
+- *Revoking access* deletes the member's membership row, so their next shared-vault request gets `403`. This does not rotate the organization key: a revoked member already saw it while a member, so anything they previously read or exported stays readable to them. True forward secrecy requires key rotation (generating a new organization key, re-enveloping it to the remaining members, and re-encrypting every shared entry), which is a documented future extension, not yet built.
+
+### Key Roles (organization sharing)
+
+| Key | Where it lives | Purpose |
+|-----|----------------|---------|
+| `public_key` | Server DB, plaintext | Envelope the org key to a member; not secret |
+| `private_key` (RSA) | Client RAM; wrapped form in DB | Unwraps the member's copy of the org key |
+| `encrypted_private_key` | Server DB | AES-GCM ciphertext of the private key under the WrappingKey |
+| `OrgKey` (AES-256) | Client RAM; per-member enveloped copies in DB | Single key that encrypts all shared entries |
+| `wrapped_key` | Server DB (one row per member) | `OrgKey` RSA-enveloped to that member's public key |
 
 ## Session Handling
 

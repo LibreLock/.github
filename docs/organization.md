@@ -73,7 +73,7 @@ Recorded actions: organization enabled (the very first entry), account created, 
 ## Registration
 
 The policy is set by an admin under **Organization → Management → Registration** (no restart, no config edit).
-It defaults to **invite-only**.
+It defaults to invite-only.
 Switching to public is treated as a dangerous action and requires confirming a warning dialog.
 
 ### Open (public sign-up)
