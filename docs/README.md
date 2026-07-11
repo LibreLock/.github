@@ -9,6 +9,7 @@ Guides for deploying, configuring, and customizing your self-hosted LibreLock in
 
 - [Organization Mode](organization.md) — run LibreLock for a team: read about personal vs organization mode, switching modes in-app, roles (admin/member), user management, and invite-only registration.
 - [Customization](customization.md) — make LibreLock your own: replace the logo and name with your company's, set support links, and add a login message.
+- [Cryptography & Session Handling](cryptography.md) — how LibreLock protects your data: client-side encryption, key wrapping, the authentication flow, and browser session handling.
 
 ---
 
