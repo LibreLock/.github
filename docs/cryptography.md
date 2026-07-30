@@ -47,7 +47,9 @@ The AEK is generated once at registration and never changes. Only its encrypted 
 5. Client decrypts: `AEK = AES-256-GCM-Decrypt(protected_key, WrappingKey)`
 6. Client uses AEK to decrypt vault items
 
-If the username does not exist, the server responds to step 1 with plausible, randomly generated KDF parameters instead of an error - this prevents an attacker from using `/auth/kdf` to enumerate registered usernames.
+An unknown username gets a decoy salt derived from a per-instance secret, and login spends the same Argon2id work either way, so neither endpoint says whether an account exists. Registration is the exception: a taken username has to be reported, so open-registration instances are enumerable through the sign-up form.
+
+Client and server both reject KDF parameters below the defaults above, so a compromised server cannot force a weak derivation. The three unauthenticated `/auth` endpoints are rate limited per client and hashing is capped per CPU (`ARGON2_MAX_CONCURRENCY`); set `TRUSTED_PROXIES` behind a reverse proxy, or all clients share one bucket.
 
 ### Changing Master Password
 
@@ -104,9 +106,9 @@ Shared entries live in a separate `org_vault` table with no owning-user column �
 
 ## Session Handling
 
-Once unlocked, the client holds its keys in memory as `CryptoKey`s and mirrors them to IndexedDB: the non-extractable **vault key** (`AEK`), plus — for org members with shared access — the user's **RSA private key** and the **organization shared key**. A `vault_unlocked` flag in `sessionStorage` gates all of them. Since `sessionStorage` survives a reload but is per-tab and cleared on close, reloading the same tab restores the keys from IndexedDB with no re-derivation, while a freshly opened tab (no flag) cannot read them.
+Once unlocked, the client keeps its keys in memory and mirrors them to IndexedDB: the **vault key** (`AEK`), plus the **RSA private key** and **organization shared key** for members with shared access. Each tab wraps everything it stores under a random AES-256-GCM *session secret* held in `sessionStorage`, so a reload restores the keys and closing the tab leaves ciphertext nobody can read. Marking the keys non-extractable would not achieve this on its own, since the browser still writes key material to the profile.
 
-To unlock a new tab without re-entering the master password, it requests the keys from other tabs over a `BroadcastChannel`; any already-unlocked tab replies. If none answers within a short timeout, the tab stays locked and the user must authenticate.
+A new tab asks other tabs for the keys over a same-origin `BroadcastChannel` and stays locked if none replies. That is no defence against script running *on* the origin, which can ask every tab directly.
 
 ---
 
