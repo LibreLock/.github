@@ -47,6 +47,7 @@ Admins get an Organization link in the sidebar, from which they can manage:
   You cannot change your own account here; use Settings for that.
 - **Invites** — only shown when `registration` is `invite` (see below).
 - **Customization** — company branding. See [customization.md](customization.md).
+- **Export & Import** — back up or restore the shared vault. Requires shared-vault access. See [export-import.md](export-import.md).
 - **Management** — the registration policy (see [Registration](#registration)) and, for the owner only, Return to personal mode (see [Switching modes](#switching-modes)).
 - **Audit log** — a chronological record of administrative activity (see below).
 

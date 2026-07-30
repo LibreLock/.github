@@ -15,6 +15,7 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 - **Personal and organization mode**: Use LibreLock as a personal password manager or create an organization with multiple users, roles, and invite-only registration.
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
 - **Categorization**: Organize your vault items into categories, assign them icons and colors for easy identification.
+- **Export & import**: Export and import entire vault contents to a JSON file, protected with a password of your own.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 - **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
 - **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
@@ -54,6 +55,7 @@ Guides live in [`docs/`](../docs/README.md):
 
 - [Organization Mode](../docs/organization.md) — teams, roles (admin/member), user management, and invite-only registration.
 - [Customization](../docs/customization.md) — white-label your instance with your own logo, company name, and support details.
+- [Export & Import](../docs/export-import.md) — back up or move a vault: encrypted and plaintext backup files, how imports merge, and the file format.
 - [Cryptography & Session Handling](../docs/cryptography.md) — client-side encryption, key wrapping, the authentication flow, and browser session handling.
 
 ## Tech Stack
