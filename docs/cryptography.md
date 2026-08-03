@@ -3,7 +3,7 @@
   <h1 align="center">Cryptography & Session Handling</h1>
 </div>
 
-How LibreLock protects your data: client-side encryption, key wrapping, the authentication flow, the organization shared vault, and how unlocked sessions are kept in the browser.
+Learn how LibreLock utilizes client-side encryption, key wrapping, the authentication flow, the organization shared vault, and how unlocked sessions are kept in the browser.
 
 ## Cryptography Overview
 
@@ -11,7 +11,29 @@ Librelock uses client-side encryption with key wrapping. The server never sees p
 
 Users create an account with a username (up to 500 characters) and a master password (12 to 10000 characters). The password is run through Argon2id (4 iterations, 64 MB memory, parallelism 4, with a random 32-byte salt) to derive a 256-bit **master key**, which never leaves the client. Two subkeys are derived from it via HKDF-SHA-256: an **auth credential** that proves identity to the server (stored only as an Argon2id hash) and a **wrapping key** that encrypts/decrypts the vault key (never stored anywhere).
 
-A random 256-bit **vault key** (`AEK`) encrypts all vault items with AES-256-GCM. The vault key itself is encrypted ("wrapped") under the wrapping key using AES-256-GCM with a random 12-byte IV, producing the **protected key** - the only form of the vault key ever sent to or stored on the server.
+A random 256-bit **vault key** (`AEK`) encrypts all vault items with AES-256-GCM, each with its own random 12-byte IV. Category names are encrypted the same way, so the server stores them as ciphertext too. The vault key itself is encrypted ("wrapped") under the wrapping key using AES-256-GCM with a random 12-byte IV, producing the **protected key** - the only form of the vault key ever sent to or stored on the server.
+
+```
+  master password (never leaves the browser)
+        │
+        │  Argon2id  (4 iterations, 64 MB, parallelism 4, random 32-byte salt)
+        ▼
+    MasterKey (client RAM only, never stored)
+        │
+        ├─ HKDF("auth") ─► auth_credential ─────► server stores argon2id(auth_credential)
+        │
+        └─ HKDF("wrap") ─► WrappingKey (stored in client RAM only, never persisted)
+                                       │
+                                       │  wraps / unwraps  (AES-256-GCM, 12-byte IV)
+                                       ▼
+                                  AEK (vault key) ────────► server stores protected_key
+                                       │
+                                       │  encrypts  (AES-256-GCM, fresh IV per item)
+                                       ▼
+                          vault items + category names ───► server stores encrypted_blob + iv
+```
+
+Everything to the left of the arrows exists only in the browser. Everything to the right is what the server holds, and none of it is usable without the master password.
 
 ### Key Roles
 
@@ -84,8 +106,11 @@ Shared entries are all encrypted under a single random **organization key** (AES
 - *Bootstrap.* The first admin/owner to enable sharing generates the organization key in the browser, envelopes it to their own public key, and self-grants (writes their own membership row). The key stays in memory for the session.
 - *Granting a member.* An admin who currently holds the organization key envelopes it to the target member's public key and posts the result as a new membership. This needs only the target's public key, never their password or private key, so an admin can grant (or re-grant, as recovery) access without the member present.
 - *Loading the key.* On login a member fetches their own enveloped copy (`GET /org/shared-key`) and decrypts it with their RSA private key to recover the organization key into memory.
+The server holds every member's `wrapped_key` and can open none of them: each one needs an RSA private key, and every private key in the database is itself encrypted under its owner's wrapping key.
 
 ### Shared entries
+
+Shared categories work the same way: `org_category` names are encrypted under the organization key, exactly as personal category names are encrypted under the vault key.
 
 Shared entries live in a separate `org_vault` table with no owning-user column — they outlive whoever created them, and access is gated by membership rather than row ownership. Each row is an AES-256-GCM ciphertext (`encrypted_blob` + `iv`) under the organization key, exactly like personal entries but keyed on the shared key. Server-side, every shared-vault route requires an active membership; a request from a user without one is rejected with `403`.
 

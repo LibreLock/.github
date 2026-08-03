@@ -3,16 +3,25 @@
 LibreLock runs in one of two modes chosen per instance:
 
 - **Personal** (default) — a private, single-user (or shared-household) vault.
-  No roles, no admin area, plain LibreLock branding.
+  No roles, no admin area, plain LibreLock branding. Sign-up closes once the first account exists; see [Personal instances](#personal-instances) for more.
 - **Organization** — a company instance with roles (admin / member), an Organization admin area, white-label customization, and optional invite-only registration.
 
 The same binary and database serve both.
+
+## Personal instances
+
+Personal instance is the default mode when running LibreLock. It's intended to be used by a single user with a single account. The first account created on the instance is the only one that can sign up (by default), and it becomes the owner. There are two ways to allow more accounts:
+
+- **Sign-up** — closed as soon as the first account exists. Personal instance is intended to be used by a single user with a single account. If the goal is to have multiple users, switching to organizational mode is recommended. There is still however a way to create multiple accounts in personal mode (example use case is multiple accounts for a single user, e.g. work and personal). This is done in *Settings → Instance → Sign-up → Allow new accounts*.
+- **Switch to organization** — see [Switching modes](#switching-modes).
+
+Both are restricted to the **first account created on the instance**. Personal mode has no roles to gate on, and switching to organization mode makes the caller owner over every other account, so without this restriction any account could seize the instance. Other users see a read-only panel naming the first account, so they know who to ask.
 
 ## Configuration
 
 There is no config file. A fresh instance starts in personal mode and runs as-is. The mode is stored in the database (the `app_state` row) and read live on every request.
 
-To turn a personal instance into an organization one, sign in and open Settings → Account → Switch to organization. The account you are signed in becomes the owner of the organization.
+To turn a personal instance into an organization one, sign in and open *Settings → Account → Switch to organization*. The account you are signed in becomes the owner of the organization.
 See [Switching modes](#switching-modes).
 
 > **Reverting is destructive and owner-only.**
@@ -73,38 +82,32 @@ Recorded actions: organization enabled (the very first entry), account created, 
 
 ## Registration
 
-The policy is set by an admin under **Organization → Management → Registration** (no restart, no config edit).
-It defaults to invite-only.
-Switching to public is treated as a dangerous action and requires confirming a warning dialog.
-
-### Open (public sign-up)
-
-Anyone who can reach the instance can create an account from the register page; new accounts are members (except the very first, which is the owner).
+The policy is set by an admin under *Organization → Management → Registration* (no restart, no config edit) and defaults to invite-only.
+There are 2 modes to register:
 
 ### Invite-only (default)
 
-Public sign-up is disabled. To add a member:
+To add a member:
+1. An admin opens *Organization → Invites → New invite* (an optional note, e.g. the person's email, helps admins track it).
+2. LibreLock generates a single-use link: `https://your-instance/register?invite=<token>`. Copy it now as the token is shown only once.
+3. The invitee opens the link and completes registration, choosing their own master password (nobody else — not even an admin — ever knows it).
 
-1. An admin opens Organization → Invites → New invite (an optional note, e.g. the person's email, helps you track it).
-2. LibreLock generates a single-use link: `https://your-instance/register?invite=<token>`.
-   Copy it now — the token is shown only once.
-3. The invitee opens the link and completes registration, choosing their own master password (end-to-end encryption means nobody else — not even an admin — ever knows it).
-
-Invites are single-use.
-The expiry is configurable per invite (1–90 days, default 1) via the "Expires (days)" field.
+Invites are single-use, expiry is configurable per invite (1–90 days, default 1) via the "Expires (days)" field.
 Used or expired invites show their status in the list and can be revoked.
 
-> **Why not "admin creates the account"?**
-> The master password derives the vault's encryption key in the browser and never reaches the server.
-> An admin therefore cannot set someone's password for them — the invite flow lets each user set their own while still gating who may join.
+### Open (public sign-up)
 
-The first account on a fresh invite-mode instance is still allowed to register without a token (and becomes the owner) — otherwise there would be no one to create invites.
+Anyone who can reach the instance can create an account from the register page; new accounts are members.
+Switching to public sign-up is not recommended, as it allows anyone which can access the instance to create an account and become a member of the organization.
+Especially dangerous when *Auto-grant shared vault* is enabled.
+
+In both cases, it is recommended that organizations self hosting LibreLock lock access down to a private network or VPN, and keep registration invite-only.
 
 ## Switching modes
 
-- **Personal → Organization**: in the app, **Settings → Account → Switch to organization**, confirm the warning.
+- **Personal → Organization**: in app, *Settings → Account → Switch to organization*, confirm the warning.
   The switching user becomes the owner, the organization-only tables (`organization`, `invite`, `audit_event`, `org_vault_membership`, `org_category`, `org_vault`) are created, and the mode is persisted.
   No restart is needed, existing vault data is untouched.
-- **Organization → Personal**: in the app, **Organization → Management → Return to personal mode** (owner only action).
+- **Organization → Personal**: in app, *Organization → Management → Return to personal mode* (owner only action).
   This is destructive: it permanently deletes every account except the owner — cascade-deleting their vaults, categories, and sessions, dropping the organization tables (`org_vault`, `org_category`, `org_vault_membership`, `audit_event`, `invite`, `organization`) and reverting the mode.
   A full wipe is still possible by removing the SQLite database — under Docker, `./run.sh down -v` (drops the `sqlite_data` volume); running without Docker, stop the server and delete `librelock-server/data/librelock.db`.
