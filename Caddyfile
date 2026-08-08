@@ -1,0 +1,16 @@
+# LibreLock behind Caddy. HTTPS is mandatory becuase browser's Web Crypto API (which does all the encryption) is only available on https:// or localhost
+#
+# Caddy obtains and renews the certificate on its own - point DNS at this host, make sure ports 80 and 443 reach it, and start Caddy
+#
+# Used as-is by compose.caddy.yaml, which sets both variables from .env
+# Running Caddy on the host instead? Replace {$LIBRELOCK_DOMAIN} with your domain and {$LIBRELOCK_UPSTREAM} with 127.0.0.1:1401.
+
+{$LIBRELOCK_DOMAIN} {
+	encode zstd gzip
+
+	# HSTS: once a browser has seen this it refuses to talk to the site over plain HTTP
+	# Drop the preload directive unless you mean it - it is hard to undo
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	reverse_proxy {$LIBRELOCK_UPSTREAM}
+}

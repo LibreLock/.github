@@ -1,0 +1,27 @@
+# Optional overlay: puts Caddy in front of LibreLock and gets a TLS certificate automatically from Let's Encrypt.
+# Requires LIBRELOCK_DOMAIN in .env, a DNS A/AAAA record pointing at this host, and ports 80/443 free
+#
+#   docker compose -f compose.yaml -f compose.caddy.yaml up -d
+#
+# Set LIBRELOCK_BIND=127.0.0.1 in .env so the plain-HTTP app port is not exposed
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      LIBRELOCK_DOMAIN: ${LIBRELOCK_DOMAIN:?set LIBRELOCK_DOMAIN in .env}
+      LIBRELOCK_UPSTREAM: web:1401
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

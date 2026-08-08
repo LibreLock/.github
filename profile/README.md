@@ -23,36 +23,47 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 
 ## Get Started
 
-The recommended way to run LibreLock is with Docker Compose. Clone [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web), then run the provided `run` script from this repo to build and start both with one command:
-
+One command run:
 ```bash
-git clone https://github.com/librelock/librelock-server.git
-git clone https://github.com/librelock/librelock-web.git
-
-# Linux/macOS
-# Get the script from https://github.com/LibreLock/.github/blob/main/run.sh
-chmod +x ./run.sh
-./run.sh
-
-# Windows (PowerShell)
-# Get the script from https://github.com/LibreLock/.github/blob/main/run.ps1
-./run.ps1
+curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml && docker compose up -d
 ```
 
-This copies `.env.example` to `.env`, then runs `docker compose up -d --build` for both projects. The web app is served at [localhost:1401](http://localhost:1401) and the API at [localhost:8000](http://localhost:8000). LibreLock uses a single embedded SQLite database (no separate database server to run), which is kept in a named volume (`sqlite_data`), so it persists across restarts and rebuilds.
+Then simply open [localhost:1401](http://localhost:1401) and sign up - that account is your vault. Updating later is `docker compose pull && docker compose up -d`.
 
-A fresh instance always starts in **personal mode** - private, single-user vault, ready to use as-is. To run it as a team instance, sign in and switch to **organization mode** from Settings → Account → Switch to organization (no restart or config edit needed); the account you switch with becomes the owner. See [Organization Mode](../docs/organization.md) for details.
+One port, one origin: the web container serves the app and proxies `/api` to the API container, and the whole instance is a single embedded SQLite database in a Docker volumes, so it survives restarts and updates. There is nothing to configure to get started; settings, if you want any, go in a `.env` file next to `compose.yaml` - see [Configuration](../docs/self-hosting.md#configuration).
 
-To stop everything, run `./run.sh down` (or `./run.ps1 down`). To completely tear down the stack (including the database volume!) run `./run.sh down -v` (or `./run.ps1 down -v`).
+A fresh instance starts in **personal mode** - private, single-user vault, ready as-is. To run LibreLock for a team, sign in and switch to **organization mode** from Settings → Account → Switch to organization (no restart or config edit needed); the account you switch with becomes the owner. See [Organization Mode](../docs/organization.md).
 
-To run without Docker (requires Go and Node.js), use `run-local.sh` / `run-local.ps1` instead. This starts the API with `go run` and the web app with `npm run dev`, and stops both on Ctrl-C.
+```bash
+docker compose down     # stop
+docker compose down -v  # stop and delete the database volume (dangerous)
+```
 
-For details on running the backend or frontend individually, see the `README.md` in [librelock-server](https://github.com/librelock/librelock-server) and [librelock-web](https://github.com/librelock/librelock-web).
+### Hosting it on a domain
+
+Serving LibreLock anywhere other than `localhost` **requires HTTPS** - the browser exposes the Web Crypto API, which does all the encryption, in a secure context. A ready-made [Caddyfile](../Caddyfile) and Compose overlay handle the certificate for you:
+
+```bash
+curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.caddy.yaml
+curl -O https://raw.githubusercontent.com/LibreLock/.github/main/Caddyfile
+cat >> .env <<'EOF'
+LIBRELOCK_DOMAIN=vault.example.com
+LIBRELOCK_BIND=127.0.0.1
+COMPOSE_FILE=compose.yaml:compose.caddy.yaml
+EOF
+
+docker compose up -d
+```
+
+Point DNS at the host and Caddy gets and renews the certificate from Let's Encrypt on its own. Full guide, including other reverse proxies, backups, updating, and every setting: [Self-Hosting](../docs/self-hosting.md).
+
+Working on LibreLock source? Development setup lives in [librelock-server](https://github.com/LibreLock/librelock-server) and [librelock-web](https://github.com/LibreLock/librelock-web).
 
 ## Documentation
 
 Guides live in [`docs/`](../docs/README.md):
 
+- [Self-Hosting](../docs/self-hosting.md) — run your own instance: one-command setup, ports, HTTPS and reverse proxies, configuration, updating, and backups.
 - [Organization Mode](../docs/organization.md) — teams, roles (admin/member), user management, and invite-only registration.
 - [Customization](../docs/customization.md) — white-label your instance with your own logo, company name, and support details.
 - [Export & Import](../docs/export-import.md) — back up or move a vault: encrypted and plaintext backup files, how imports merge, and the file format.

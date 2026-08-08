@@ -53,19 +53,15 @@ foreach ($line in Get-Content $ServerEnv) {
 Write-Host "Starting API..."
 $Server = Start-Process go -ArgumentList "run", "." -WorkingDirectory $ServerDir -NoNewWindow -PassThru
 
+# The dev server proxies /api to the API, so both sit on one origin
 Write-Host "Starting web..."
-Push-Location $WebDir
-try {
-    npm run build
-    $Web = Start-Process npm -ArgumentList "run", "preview", "--", "--port", "1401" -NoNewWindow -PassThru
-} finally {
-    Pop-Location
-}
+$Web = Start-Process npm -ArgumentList "run", "dev" -WorkingDirectory $WebDir -NoNewWindow -PassThru
 
 Write-Host ""
 Write-Host "LibreLock is running:"
-Write-Host "    Web: http://localhost:1401"
-Write-Host "    API: http://localhost:8000"
+$WebPort = if ($env:WEB_PORT) { $env:WEB_PORT } else { "1401" }
+Write-Host "    Web: http://localhost:$WebPort"
+Write-Host "    API: http://localhost:8000 (also proxied at /api)"
 Write-Host "Press Ctrl-C to stop."
 
 try {

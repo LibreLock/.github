@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Runs the full LibreLock stack (backend API + frontend web) locally without Docker.
-# Requires Go and Node.js (npm). Ctrl-C stops both.
-# Usage: ./run-local.sh
+# Runs the full LibreLock stack (backend API + frontend web) locally without Docker
+# Requires Go and Node.js (npm). Ctrl-C stops both
+# Usage: ./run-local.sh   (WEB_PORT=1401 by default)
 
 set -euo pipefail
 
@@ -56,14 +56,15 @@ echo "Starting API..."
 ) &
 SERVER_PID=$!
 
+# The dev server proxies /api to the API, so both sit on one origin
 echo "Starting web..."
-(cd "$WEB_DIR" && npm run build && exec npm run preview -- --port 1401) &
+(cd "$WEB_DIR" && exec npm run dev) &
 WEB_PID=$!
 
 echo
 echo "LibreLock is running:"
-echo "    Web: http://localhost:1401"
-echo "    API: http://localhost:8000"
+echo "    Web: http://localhost:${WEB_PORT:-1401}"
+echo "    API: http://localhost:${API_PORT:-8000} (also proxied at /api)"
 echo "Press Ctrl-C to stop."
 
 wait

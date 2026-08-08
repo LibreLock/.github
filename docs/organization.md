@@ -110,4 +110,4 @@ In both cases, it is recommended that organizations self hosting LibreLock lock 
   No restart is needed, existing vault data is untouched.
 - **Organization → Personal**: in app, *Organization → Management → Return to personal mode* (owner only action).
   This is destructive: it permanently deletes every account except the owner — cascade-deleting their vaults, categories, and sessions, dropping the organization tables (`org_vault`, `org_category`, `org_vault_membership`, `audit_event`, `invite`, `organization`) and reverting the mode.
-  A full wipe is still possible by removing the SQLite database — under Docker, `./run.sh down -v` (drops the `sqlite_data` volume); running without Docker, stop the server and delete `librelock-server/data/librelock.db`.
+  A full wipe is still possible by removing the SQLite database — under Docker, `docker compose down -v` (drops the `librelock_sqlite_data` volume); running without Docker, stop the server and delete `librelock-server/data/librelock.db`.

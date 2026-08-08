@@ -1,0 +1,49 @@
+#   curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml
+#   docker compose up -d
+#
+# Everything is reachable on one origin: the web container serves the app and proxies /api to the API container
+# Settings live in a .env file next to this one (see .env.example), every value below has a working default
+name: librelock
+
+services:
+  api:
+    image: ghcr.io/librelock/librelock-server:${LIBRELOCK_VERSION:-latest}
+    # Prefer building from source? Comment the line above and uncomment this one
+    # build: https://github.com/LibreLock/librelock-server.git#main
+    restart: unless-stopped
+    environment:
+      # production marks the session cookie Secure, so it needs HTTPS (or localhost)
+      # Set APP_ENV=development in .env only if you must serve over plain HTTP
+      APP_ENV: ${APP_ENV:-production}
+      DB_PATH: /app/data/librelock.db
+      TOKEN_TTL: ${TOKEN_TTL:-3600}
+      # The web container (and any reverse proxy in front of it) sits on a private
+      # network, so trust X-Forwarded-For from private ranges only - otherwise every
+      # request looks like it came from the proxy and shares one rate-limit bucket
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+    volumes:
+      - sqlite_data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    # No published port: the API is only reached through the web container
+
+  web:
+    image: ghcr.io/librelock/librelock-web:${LIBRELOCK_VERSION:-latest}
+    # build: https://github.com/LibreLock/librelock-web.git#main
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      API_UPSTREAM: http://api:8000
+      WEB_PORT: 1401
+    ports:
+      # Set LIBRELOCK_BIND=127.0.0.1 when a reverse proxy on the host fronts this
+      - "${LIBRELOCK_BIND:-0.0.0.0}:${LIBRELOCK_PORT:-1401}:1401"
+
+volumes:
+  sqlite_data:
