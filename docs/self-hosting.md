@@ -181,7 +181,7 @@ All settings are environment variables read from `.env` next to `compose.yaml`. 
 | `LIBRELOCK_VERSION` | `latest` | Image tag both containers run: `latest`, a major (`1`), or an exact release (`1.2.3`) |
 | `LIBRELOCK_PORT` | `1401` | Host port the app is served on |
 | `LIBRELOCK_BIND` | `0.0.0.0` | Address that port is published on; `127.0.0.1` when a reverse proxy fronts it |
-| `TOKEN_TTL` | `3600` | Session lifetime in seconds |
+| `TOKEN_TTL` | `3600` | Idle timeout in seconds; the clock resets on every request. The session cookie itself is dropped when the browser closes |
 | `TRUSTED_PROXIES` | private ranges | Proxies whose `X-Forwarded-For` is believed, for rate limiting and session IPs |
 | `APP_ENV` | `production` | `production` marks the session cookie `Secure`; only lower it if you must serve over plain HTTP |
 | `UPGRADE_BACKUPS` | `true` | Snapshot the database into `backups/` before a new version migrates it; `false` only where the disk cannot hold a second copy |
