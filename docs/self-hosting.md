@@ -14,27 +14,36 @@ Because the API is proxied under `/api` on the same origin as the app, there is 
 
 ## Requirements
 
-- Docker with the Compose plugin, on `linux/amd64` or `linux/arm64` - both are published, so a Raspberry Pi or an ARM VPS works
+- Docker 23 or newer with the Compose plugin, on `linux/amd64` or `linux/arm64` - both are published,so a Raspberry Pi or an ARM VPS works
 - Not much else: the two containers idle in well under 200 MB
 - For anything other than `localhost`: a domain and HTTPS (see [HTTPS is required](#https-is-required))
 
 ## Quick start
 
 ```bash
-curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml && docker compose up -d
+curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml
+docker compose up -d
 ```
 
-That pulls two prebuilt images and starts them - seconds, not a build. The app is then at [localhost:1401](http://localhost:1401), and signing up creates your vault. There is nothing to configure first.
+That pulls two prebuilt images and starts them in seconds. The app runs on [localhost:1401](http://localhost:1401), all that is left is to create an account and start using the vault - there is nothing to configure if you are just running it locally.
 
 A fresh instance starts in **personal mode** - a private, single-user vault, ready as-is. To run it for a team, switch to [organization mode](organization.md) from Settings → Account; no restart or config edit needed.
 
 The database lives in a Docker volume (`librelock_sqlite_data`) and survives restarts and updates. It is deleted only by `docker compose down -v`.
 
-Anything you do want to change goes in a `.env` file next to `compose.yaml` - port, version, bind address, all of it optional. Start from [`.env.example`](../.env.example), or just write the one line you need:
+Anything you do want to change goes in a `.env` file next to `compose.yaml` - port, version, bind address, all of it optional. Take the annotated template and edit it:
 
 ```bash
-echo "LIBRELOCK_PORT=8443" > .env && docker compose up -d
+curl -o .env https://raw.githubusercontent.com/LibreLock/.github/main/.env.example
 ```
+
+Every setting in it is already at its default, so change only what you care about - a deleted line falls back to the same value:
+
+```ini
+LIBRELOCK_PORT=<PORT>
+```
+
+Then `docker compose up -d`. Editing `.env` later takes required running `docker compose up -d` again to apply.
 
 ## HTTPS is required
 
@@ -42,29 +51,30 @@ LibreLock encrypts everything in the browser using the [Web Crypto API](https://
 
 So: `localhost` for a local install, HTTPS for everything else. There is no third option.
 
-## Serving it on a domain
+## Beyond localhost
 
-Two situations, and they need different certificate challenges:
+If you want to self-host LibreLock on your domain, you need a certificate (app required HTTPS). The easiest way is to use Caddy since it handles certificates from Let's Encrypt automatically. Two situations, and they need different certificate challenges:
 
 - **The host is reachable from the internet.** Point an `A` (and `AAAA`) record at it, keep ports 80 and 443 open, and Caddy solves the HTTP challenge on its own. Start with [Caddy in the same stack](#caddy-in-the-same-stack-recommended).
-- **The host only exists on your network** (`librelock.asgard.lan.si` resolving to `192.168.x.x`). Let's Encrypt cannot reach it, so the HTTP challenge fails and you need a DNS challenge - see [Internal domains](#internal-domains-and-wildcard-certificates).
+- **The host only exists on your local network** (`domain.com` resolving to `192.168.x.x`). Let's Encrypt cannot reach it, so the HTTP challenge fails and you need a DNS challenge - see [Internal domains](#internal-domains-and-wildcard-certificates).
 
 ### Caddy, in the same stack (recommended)
-
 Caddy gets and renews certificates from Let's Encrypt by itself. Grab the two extra files and set the domain:
 
 ```bash
 curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.caddy.yaml
 curl -O https://raw.githubusercontent.com/LibreLock/.github/main/Caddyfile
+```
 
-cat >> .env <<'EOF'
+Then set three values in `.env` - the last two are at the bottom of the template, commented out (grab the template with the `curl -o .env` line from [Quick start](#quick-start) if you do not have one yet):
+
+```ini
 LIBRELOCK_DOMAIN=vault.example.com
 LIBRELOCK_BIND=127.0.0.1
 COMPOSE_FILE=compose.yaml:compose.caddy.yaml
-EOF
-
-docker compose up -d
 ```
+
+and start it with `docker compose up -d`.
 
 `LIBRELOCK_BIND=127.0.0.1` keeps the plain-HTTP app port off the public interface; Caddy reaches the web container over the internal Docker network.
 
@@ -174,6 +184,7 @@ All settings are environment variables read from `.env` next to `compose.yaml`. 
 | `TOKEN_TTL` | `3600` | Session lifetime in seconds |
 | `TRUSTED_PROXIES` | private ranges | Proxies whose `X-Forwarded-For` is believed, for rate limiting and session IPs |
 | `APP_ENV` | `production` | `production` marks the session cookie `Secure`; only lower it if you must serve over plain HTTP |
+| `UPGRADE_BACKUPS` | `true` | Snapshot the database into `backups/` before a new version migrates it; `false` only where the disk cannot hold a second copy |
 | `LIBRELOCK_DOMAIN` | - | Domain Caddy serves, `compose.caddy.yaml` only |
 
 Everything else - personal vs organization mode, whether sign-ups are open or invite-only, logo, name, support links - is set in the app itself and stored in the database. See [Organization Mode](organization.md) and [Customization](customization.md).
@@ -185,7 +196,9 @@ docker compose pull
 docker compose up -d
 ```
 
-The database is untouched; the server applies schema changes on startup. Take a [backup](#backups) first anyway.
+The database is untouched; the server applies schema changes on startup.
+
+When the version changes, the server snapshots the database before migrating it, into `backups/` inside the same volume - `librelock-<old version>-<timestamp>.db`, the three newest kept. If an upgrade goes wrong, stop the stack, put that file back as `librelock.db`, and pin `LIBRELOCK_VERSION` to the old release. Those snapshots sit on the same disk as the original, so they are an undo button, not a [backup](#backups) - keep taking those too.
 
 `LIBRELOCK_VERSION` in `.env` decides what `pull` gets. The default `latest` moves with every release; `LIBRELOCK_VERSION=1` takes fixes within a major version, `1.2.3` freezes until you change it.
 
@@ -206,14 +219,37 @@ Expect a few minutes and about 1 GB of RAM for the frontend build. Pin the sourc
 
 The volume `librelock_sqlite_data` holds the entire instance. Vault contents stay encrypted - the server has never had the keys - but the file also holds every user's password hash, so **keep snapshots off the server and encrypted at rest**.
 
-SQLite runs in WAL mode, so copying `librelock.db` alone is not enough. Take a consistent snapshot while the stack keeps running:
+SQLite runs in WAL mode, so copying `librelock.db` alone is not enough - recent writes sit in `librelock.db-wal` until they are checkpointed. Take a consistent snapshot into the current folder while the stack keeps running:
 
 ```bash
-docker run --rm -v librelock_sqlite_data:/data -v "$PWD:/out" alpine \
-  sh -c "apk add -q --no-cache sqlite && sqlite3 /data/librelock.db \"VACUUM INTO '/out/librelock-\$(date +%F).db'\""
+docker run --rm -v librelock_sqlite_data:/data -v .:/out alpine sh -c "apk add -q --no-cache sqlite && sqlite3 /data/librelock.db '.backup /out/librelock-backup.db'"
 ```
 
-Verify it with `sqlite3 librelock-YYYY-MM-DD.db "PRAGMA integrity_check"` (should print `ok`), and put the command in cron for a schedule. Restore instructions are in the [server README](https://github.com/LibreLock/librelock-server#backups).
+`.backup` is SQLite's online-backup API: it reads through an open connection, so it picks up whatever is still in the WAL and writes one self-contained file. Everything inside the quotes runs in the container, which is why this one line is identical on Linux, macOS, PowerShell and `cmd`.
+
+For a scheduled job you want the date in the name. Only the line that reads the date differs - the `docker` line is the same on both:
+
+```bash
+# Linux/macOS, for cron
+d=$(date +%F)
+docker run --rm -v librelock_sqlite_data:/data -v .:/out alpine sh -c "apk add -q --no-cache sqlite && sqlite3 /data/librelock.db '.backup /out/librelock-$d.db'"
+```
+
+```powershell
+# Windows PowerShell, for Task Scheduler
+$d = Get-Date -Format yyyy-MM-dd
+docker run --rm -v librelock_sqlite_data:/data -v .:/out alpine sh -c "apk add -q --no-cache sqlite && sqlite3 /data/librelock.db '.backup /out/librelock-$d.db'"
+```
+
+Verify a snapshot before trusting it - this prints `ok`, and needs no `sqlite3` installed on the host:
+
+```bash
+docker run --rm -v .:/out alpine sh -c "apk add -q --no-cache sqlite && sqlite3 /out/librelock-backup.db 'PRAGMA integrity_check'"
+```
+
+Restore instructions are in the [server README](https://github.com/LibreLock/librelock-server#backups).
+
+This is separate from the automatic pre-upgrade snapshots described under [Updating](#updating), which live in the same volume as the database and only protect you from a bad upgrade.
 
 This is separate from the per-user [Export](export-import.md), which decrypts one vault in the browser. That one protects a user moving their data; this one protects the operator whose disk died.
 

@@ -18,22 +18,23 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 - **Export & import**: Export and import entire vault contents to a JSON file, protected with a password of your own.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 - **Light/dark theme**: toggle between light and dark mode; theme persistes in local storage.
-- **Open source**: LibreLock is fully open source. You can self-host it on your own server or contribute to the project on GitHub.
-
 
 ## Get Started
 
-One command run:
+Running LibreLock is as simple as:
 ```bash
-curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml && docker compose up -d
+curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.yaml
+docker compose up -d
 ```
 
-Then simply open [localhost:1401](http://localhost:1401) and sign up - that account is your vault. Updating later is `docker compose pull && docker compose up -d`.
 
-One port, one origin: the web container serves the app and proxies `/api` to the API container, and the whole instance is a single embedded SQLite database in a Docker volumes, so it survives restarts and updates. There is nothing to configure to get started; settings, if you want any, go in a `.env` file next to `compose.yaml` - see [Configuration](../docs/self-hosting.md#configuration).
+Then simply open [localhost:1401](http://localhost:1401) and create an account and start using the vault. Updating later is `docker compose pull`, then `docker compose up -d`.
 
 A fresh instance starts in **personal mode** - private, single-user vault, ready as-is. To run LibreLock for a team, sign in and switch to **organization mode** from Settings → Account → Switch to organization (no restart or config edit needed); the account you switch with becomes the owner. See [Organization Mode](../docs/organization.md).
 
+There is only one port and one origin: the web container serves the app and proxies `/api` to the API container, and the whole instance is a single embedded SQLite database in a Docker volumes, so it survives restarts and updates. There is nothing to configure to get started. If you want to go further later, settings go in a `.env` file next to `compose.yaml` - see [Configuration](../docs/self-hosting.md#configuration) for more.
+
+To stop LibreLock, run:
 ```bash
 docker compose down     # stop
 docker compose down -v  # stop and delete the database volume (dangerous)
@@ -41,17 +42,25 @@ docker compose down -v  # stop and delete the database volume (dangerous)
 
 ### Hosting it on a domain
 
-Serving LibreLock anywhere other than `localhost` **requires HTTPS** - the browser exposes the Web Crypto API, which does all the encryption, in a secure context. A ready-made [Caddyfile](../Caddyfile) and Compose overlay handle the certificate for you:
+Serving LibreLock anywhere other than `localhost` **requires HTTPS** - the browser exposes the Web Crypto API, which does all the encryption only in a secure context. A ready-made [Caddyfile](../Caddyfile) and Compose overlay handle the certificate for you:
 
 ```bash
 curl -O https://raw.githubusercontent.com/LibreLock/.github/main/compose.caddy.yaml
 curl -O https://raw.githubusercontent.com/LibreLock/.github/main/Caddyfile
-cat >> .env <<'EOF'
+curl -o .env https://raw.githubusercontent.com/LibreLock/.github/main/.env.example
+```
+
+The last line grabs the annotated settings template - skip it if you already have a `.env`. Set three values in it, in any text editor (the last two are at the bottom, commented out):
+
+```ini
 LIBRELOCK_DOMAIN=vault.example.com
 LIBRELOCK_BIND=127.0.0.1
 COMPOSE_FILE=compose.yaml:compose.caddy.yaml
-EOF
+```
 
+then:
+
+```bash
 docker compose up -d
 ```
 

@@ -17,6 +17,8 @@ services:
       APP_ENV: ${APP_ENV:-production}
       DB_PATH: /app/data/librelock.db
       TOKEN_TTL: ${TOKEN_TTL:-3600}
+      # Snapshots the database into /app/data/backups before a new version migrates it
+      UPGRADE_BACKUPS: ${UPGRADE_BACKUPS:-true}
       # The web container (and any reverse proxy in front of it) sits on a private
       # network, so trust X-Forwarded-For from private ranges only - otherwise every
       # request looks like it came from the proxy and shares one rate-limit bucket
