@@ -16,6 +16,7 @@ LibreLock is a secure, modern, self-hosted password manager. Manage your passwor
 - **Password health monitoring**: Each password is checked against the [Have I Been Pwned](https://haveibeenpwned.com) breach database using k-anonymity. Passwords are also scored for strength and flagged if reused across multiple entries.
 - **Categorization**: Organize your vault items into categories, assign them icons and colors for easy identification.
 - **PWA support**: Install LibreLock as a Progressive Web App on your desktop or mobile device for a native-like experience.
+- **Fingerprint unlock**: Unlock the vault with your fingerprint, face, or device PIN instead of the master password.
 - **Export & import**: Export and import entire vault contents to a JSON file, protected with a password of your own.
 - **Session management**: View all active sessions with device name, IP address, and last-used timestamp. Revoke individual sessions or all sessions at once from the settings page.
 
