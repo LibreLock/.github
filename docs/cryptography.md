@@ -135,6 +135,35 @@ Once unlocked, the client keeps its keys in memory and mirrors them to IndexedDB
 
 A new tab asks other tabs for the keys over a same-origin `BroadcastChannel` and stays locked if none replies. That is no defence against script running *on* the origin, which can ask every tab directly.
 
+### Fingerprint unlock (WebAuthn PRF)
+
+Because the session secret dies with the tab and the API cookie is a browser-session cookie, closing an installed PWA always meant retyping the master password. A device can opt in to unlocking with its fingerprint, face, or device PIN instead, from **Settings → Security**. It is off by default, per device, and the master password always remains a way in.
+
+Enrollment asks for the master password on setup and then creates a **platform passkey** with the `prf` extension (`residentKey: required`, `userVerification: required`), and asks that credential for 32 bytes. Those bytes are the WebAuthn PRF output: deterministic for a given credential and salt, produced only after the authenticator verifies the user, and never stored anywhere. HKDF-SHA-256 turns them into an AES-256-GCM key, which encrypts the **MasterKey**.
+The result is written to a durable IndexedDB store together with the credential id and the PRF salt.
+
+```
+  fingerprint / face / device PIN
+        │
+        │  WebAuthn assertion, userVerification: required
+        ▼
+    PRF(salt) -> 32 bytes (never leaves the authenticator's control)
+        │
+        │  HKDF("librelock-biometric-unlock-v1")
+        ▼
+    unlock key ──── AES-256-GCM ────► encrypted MasterKey  (this device's IndexedDB)
+                                              │
+                                              │  HKDF "auth" / "wrap", as at login
+                                              ▼
+                                  auth_credential + WrappingKey -> ordinary login
+```
+
+Unlocking recovers the MasterKey, re-derives the same `auth_credential` and `WrappingKey` the password would have produced, and runs the normal `POST /auth/login`. No Argon2id is needed, which is why it is instant.
+
+**The server is not involved.** The passkey is never registered with it and no assertion is ever verified by it; the credential is used purely as a local key-derivation oracle. LibreLock adds no endpoint, column, or dependency for this, and an instance cannot tell which devices have it enabled.
+
+The feature only appears on devices with a platform authenticator that implements PRF (Chrome on Android and Windows Hello, Safari and Chrome on recent iOS/macOS).
+
 ---
 
 Back to the [main README](../profile/README.md) or the [documentation index](README.md).
