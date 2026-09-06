@@ -57,10 +57,27 @@ Admins get an Organization link in the sidebar, from which they can manage:
 - **Invites** — only shown when `registration` is `invite` (see below).
 - **Customization** — company branding. See [customization.md](customization.md).
 - **Export & Import** — back up or restore the shared vault. Requires shared-vault access. See [export-import.md](export-import.md).
-- **Management** — the registration policy (see [Registration](#registration)) and, for the owner only, Return to personal mode (see [Switching modes](#switching-modes)).
+- **Management** — Access settings (public sign-up, *Auto-grant shared vault*, and who may manage or edit shared entries, see [Shared-vault permissions](#shared-vault-permissions)), the registration policy (see [Registration](#registration)) and, for the owner only, Return to personal mode (see [Switching modes](#switching-modes)).
 - **Audit log** — a chronological record of administrative activity (see below).
 
 Members do not see this link, and the routes reject non-admins server-side.
+
+### Shared-vault permissions
+
+Shared-vault access lets a member read and copy every shared entry. What they may change is two further settings under Organization → Management → Access, both off by default (admins and owners only):
+
+- **Allow members to manage shared entries** — add an entry to the shared vault, delete one, and move one back into a private vault.
+- **Allow members to edit shared entries** — change what is in an entry that is already shared: its name, password, notes and so on.
+
+Creating, renaming or deleting a shared category needs both permissions at once.
+
+### Moving an entry out of the shared vault
+
+An entry can be moved either way between a private vault and the shared one, from the Private / Shared switcher on the entry form. Both directions need the *manage* permission above.
+
+Moving one *out* does not undo the sharing: every member with shared-vault access could already read, copy or export it while it was there, and deleting the shared copy takes it off their screen, not out of their hands.
+So saving that move asks first, and offers to replace the password in the same step — copy the generated value, save, then change it at the provider too.
+Skipping the rotation is allowed and warned about; for cards and secure notes there is nothing to regenerate in-app, so only the warning is shown.
 
 ### Suspend vs remove
 
@@ -78,7 +95,7 @@ The last active admin cannot be demoted, suspended, or removed, so an instance a
 Every administrative action is recorded (organization mode only) and shown newest first under Organization → Audit log.
 Actor and target names are snapshotted, so entries stay readable even after the referenced user is removed.
 
-Recorded actions: organization enabled (the very first entry), account created, role changed, owner added, user suspended / reactivated / removed, invite created / revoked, and branding / logo changes.
+Recorded actions: organization enabled (the very first entry), account created, role changed, owner added, user suspended / reactivated / removed, invite created / revoked, shared-settings changes (auto-grant, shared-vault permissions), and branding / logo changes.
 
 ## Registration
 

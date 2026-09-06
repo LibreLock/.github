@@ -22,7 +22,7 @@ Turning the toggle off produces a plaintext export instead, named `…-plaintext
 
 1. Open the same tab and choose a `.json` backup file.
 2. If it is password-protected, enter its backup password and click *Unlock file*. A summary appears: export date, whether it was encrypted, and how many entries and categories it holds.
-3. Leave *Skip duplicates* on to ignore entries the vault already has (matched on type + name + the primary secret — password, card number, or note body).
+3. Leave *Skip duplicates* on to ignore entries the vault already has (matched on type + name + the primary secret — password, card number, or note body; an entry with no password, such as an SSO-only account, is matched on its sign-in provider instead).
 4. Click *Import N entries…* and confirm. A progress bar runs while entries are created one by one.
 
 Import only ever adds: existing entries are never overwritten or deleted, so a bad import is undone by deleting what it created. When it finishes you get a count of imported, skipped, and failed entries.
@@ -45,7 +45,7 @@ Importing a file exported from a different scope works, the tab warns you when a
 
 Encrypted files use the same primitives as the vault itself: Argon2id derives a key from the backup password (64 MB memory, 4 iterations, 4 lanes, fresh random salt) and AES-256-GCM encrypts the serialised payload. See [cryptography.md](cryptography.md) for how the vault keys work.
 
-Each entry carries its name, colour, icon, category name, timestamps, and its type-specific fields (`password` / `note` / `card`). Timestamps are informational only, the server stamps its own on import. Unknown entry types, entries without a name, and colours outside the palette are dropped or defaulted while parsing, so a hand-edited file cannot inject unexpected values.
+Each entry carries its name, colour, icon, category name, timestamps, and its type-specific fields (`password` / `note` / `card`). A password entry that is linked to the entry holding its single sign-on account records that link by entry *name*, for the same reason categories are: it is restored on import only when an entry of that name exists, and dropped otherwise. Timestamps are informational only, the server stamps its own on import. Unknown entry types, entries without a name, and colours outside the palette are dropped or defaulted while parsing, so a hand-edited file cannot inject unexpected values.
 
 ## Notes & security
 
