@@ -5,9 +5,7 @@
 
 LibreLock is a secure, modern, self-hosted password manager. Manage your passwords, credit cards, and notes securely all in one place. Built for individuals and teams who value privacy and control over their data.
 
-<div align="center">
-  <img src="../content/demo.gif" alt="LibreLock Demo" width="1000" />
-</div>
+https://github.com/user-attachments/assets/d1dae087-3f7c-40c7-93d7-fb56d745f23a
 
 ## Features
 - **Secure vault**: Securely store passwords, credit card details, and notes.
