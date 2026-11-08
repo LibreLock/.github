@@ -16,7 +16,7 @@ Entries are decrypted with the vault key you already hold in browser memory, and
 
 The backup password is independent of your account password and is never stored or sent anywhere. Lose it and the file is unreadable, there is no recovery path.
 
-Turning the toggle off produces a plaintext export instead, named `…-plaintext.json`, containing every password, card number, and note in the clear. It is there for migrating into another password manager; treat the file as the vault itself and delete it once you are done.
+Turning the toggle off produces a plaintext export instead, named `…-plaintext.json`, containing every password, card number, note, and two-factor (TOTP) secret in the clear. A plaintext file with 2FA secrets lets anyone who holds it generate your codes. It is there for migrating into another password manager; treat the file as the vault itself and delete it once you are done.
 
 ## Importing
 
@@ -30,6 +30,21 @@ Import only ever adds: existing entries are never overwritten or deleted, so a b
 Categories are matched by name, not id, so files move cleanly between accounts and instances. Any category in the file that the vault lacks is created first; entries whose category could not be created (shared categories are admin-only) are still imported, just uncategorised, and named in the result.
 
 Importing a file exported from a different scope works, the tab warns you when a shared export is being imported into a personal vault or vice versa, but does not block it. Anything imported into the shared vault is visible to every member with shared-vault access.
+
+## Two-factor codes (Authenticator)
+
+A password entry can hold a 2FA (TOTP) secret, and the **Authenticator** page lists every code. It has its own import and export, separate from the vault backup above (a vault backup also carries the secrets).
+
+**Import** (Authenticator → Import) reads, entirely in the browser:
+
+- Google Authenticator's export: in that app choose *Transfer accounts → Export accounts*, then scan the QR code(s) with the camera, add a screenshot of them, or paste the `otpauth-migration://` link. Large exports are split into several numbered QR codes; the camera scanner keeps going until it has them all.
+- Plain `otpauth://totp/…` links, pasted one per line, which most other authenticator apps can export.
+
+A preview lists every account before anything is written. An account whose secret is already in your vault is skipped, so importing the same export twice adds nothing; one that matches an existing entry of the same name with no 2FA yet is added to that entry instead of creating a second one; everything else becomes a new password entry with no password set. Counter-based (HOTP) accounts are skipped, since only time-based codes are supported.
+
+**Export** (Authenticator → Export) downloads a plain-text file with one `otpauth://` link per line, named `librelock-2fa-YYYY-MM-DD-plaintext.txt`. Entries in the shared vault are left out. The file holds your secrets in the clear: delete it once it has been imported elsewhere.
+
+**Show next code** (Settings → Security → Authenticator) also displays the code that follows the current one. It is a per-device display setting and is off by default.
 
 ## File format
 
