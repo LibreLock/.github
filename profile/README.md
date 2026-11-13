@@ -84,3 +84,7 @@ Guides live in [`docs/`](../docs/README.md):
 ## Security
 
 LibreLock is end-to-end encrypted: vault data is encrypted in the browser with AES-256-GCM before it reaches the server, which only ever stores encrypted blobs and password hashes it cannot read. For the full design — key wrapping, the authentication flow, and how unlocked sessions are handled in the browser — see [Cryptography & Session Handling](../docs/cryptography.md).
+
+## License
+
+LibreLock is licensed under the [GNU Affero General Public License v3.0](https://github.com/LibreLock/librelock-server/blob/main/LICENSE) (AGPL-3.0).
